@@ -7,10 +7,10 @@ import { useState, useMemo } from 'react'
 
 const ROOMS_PER_PAGE = 6
 
-const RoomsList = () => {
-  const { data: rooms = [], isLoading, isError } = useRooms()
+const RoomsList = ({ rooms, params }: { rooms: Beds24RoomType[], params: 
+  { from: string | undefined, to: string | undefined, adults: string | undefined, children: string | undefined } }) => {
+  
   const [currentPage, setCurrentPage] = useState(0) // 0-based for CustomPagination
-  console.log(rooms, 'rooms')
   // Calculate pagination
   const totalPages = Math.ceil(rooms.length / ROOMS_PER_PAGE)
   
@@ -21,20 +21,15 @@ const RoomsList = () => {
     return rooms.slice(startIndex, endIndex)
   }, [rooms, currentPage])
 
-  if (isLoading) {
-    return <div className='flex items-center justify-center h-[260px] rounded-[40px] bg-light-blue/40 text-dark/60'>Loading rooms…</div>
-  }
-
-  if (isError || rooms.length === 0) {
-    return null
-  }
 
   return (
     <div className='flex flex-col gap-[30px] mb-[30px]'>
       <div className='grid grid-cols-3 gap-4'> 
         {currentRooms.map((room: Beds24RoomType) => (
           <RoomCard 
+            params={params}
             key={room.id} 
+            id={room.id}
             title={room.name}
             extra={''}
             price={room.minPrice}
