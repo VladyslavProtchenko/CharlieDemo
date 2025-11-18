@@ -6,6 +6,8 @@ import { Button } from "./button"
 import { BsCalendar2 } from "react-icons/bs";
 import { useState } from "react";
 import dayjs from 'dayjs';
+import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 const getValue = (date: Date | undefined) => {
   if (!date) return ''
@@ -17,17 +19,20 @@ export function DateInput({
   value,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  className = '',
 }: {
   children?: React.ReactNode,
-  value?: Date | undefined,
+  value?: DateRange | undefined,
   open?: boolean,
   onOpenChange?: (open: boolean) => void,
+  className?: string,
 }) {
-  const [internalOpen, setInternalOpen] = useState(false)
-  
+  const [internalOpen, setInternalOpen] = useState(false)  
   // Use controlled state if provided, otherwise use internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = controlledOnOpenChange || setInternalOpen
+
+  const formattedValue = (value?.from || value?.to) ? `${getValue(value?.from)} - ${getValue(value?.to)}` : ''
 
   return (
     <div className="flex flex-col gap-3">
@@ -36,7 +41,7 @@ export function DateInput({
           <div className="relative flex gap-2">
             <Input
               id="date"
-              value={getValue(value)}
+              value={formattedValue}
               placeholder={'Choose date'}
               className="rounded-full h-10 px-3 border-brown cursor-pointer"
               readOnly
@@ -57,7 +62,7 @@ export function DateInput({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="overflow-hidden w-[350px] rounded-[20px] bg-white p-2"
+          className={cn(className, "overflow-hidden  rounded-[20px] bg-white p-2 flex flex-col  w-[660px]")}
           align="center"
           side="bottom"
           sideOffset={10}
