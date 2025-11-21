@@ -94,7 +94,7 @@ export const useBookingStore = create<BookingState>((set) => ({
   bedSizeFilter: '90/200',
   sortByFilter: 'Price',
   
-  bookingPage: 3,
+  bookingPage: 1,
   
   //booking process store
   booking: {
