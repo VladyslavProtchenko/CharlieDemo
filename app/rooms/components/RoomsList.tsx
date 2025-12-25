@@ -1,18 +1,19 @@
 'use client'
 import RoomCard from './RoomCard'
-import { Beds24RoomType, UrlParams } from '@/types/beds24'
+import { UrlParams } from '@/types/apaleo'
 import { CustomPagination } from '@/app/_components/ui/CustomPagination'
 import { useState, useMemo, useEffect } from 'react'
-import { useBookingStore } from '@/store/bookingStore'
+import { useStore } from '@/store/useStore'
+import { RoomOffer } from '@/types/offers'
 
 const RoomsList = ({ 
   rooms, 
   params 
 }: { 
-  rooms: Beds24RoomType[],
+  rooms: RoomOffer[],
   params: UrlParams 
 }) => {
-  const { filter, priceFilter } = useBookingStore()
+  const { filter, priceFilter, bedSizeFilter } = useStore()
   const [currentPage, setCurrentPage] = useState(0)
   const [roomsPerPage, setRoomsPerPage] = useState(6)
   // Adjust rooms per page based on screen size
@@ -37,21 +38,31 @@ const RoomsList = ({
     let filtered = rooms;
     
     if(priceFilter === 'Cheapest') {
-      filtered = filtered.sort((a, b) => a.minPrice - b.minPrice)
+      filtered = filtered.sort((a, b) => a.price - b.price)
     } else {
-      filtered = filtered.sort((a, b) => b.minPrice - a.minPrice)
+      filtered = filtered.sort((a, b) => b.price - a.price)
     }
     if(filter === 'balcony') {
-      filtered = filtered.filter((room) => room.hasBalcony)
+      filtered = filtered.filter((room) => room.attributes?.includes('balcony'))
     }
-    // if(filter?.includes('terrace')) {
-    //   filtered = filtered.filter((room) => room.hasTerrace)
-    // }
-    // if(filter?.includes('shared_terrace')) {
-    //   filtered = filtered.filter((room) => room.hasSharedTerrace)
-    // }
+    if(filter === 'terrace') {
+      filtered = filtered.filter((room) => room.attributes?.includes('terrace'))
+    }
+    if(filter === 'shared') {
+      filtered = filtered.filter((room) => room.attributes?.includes('shared'))
+    }
+    if(bedSizeFilter === 'king') {
+      filtered = filtered.filter((room) => room.attributes?.includes('king'))
+    }
+    if(bedSizeFilter === 'queen') {
+      filtered = filtered.filter((room) => room.attributes?.includes('queen'))
+    }
+    if(bedSizeFilter === 'single') {
+      filtered = filtered.filter((room) => (room.attributes?.includes('single')))
+    }
+
     return filtered;
-  }, [rooms, priceFilter, filter])
+  }, [rooms, priceFilter, filter, bedSizeFilter])
 
   // Reset to first page when filters or rooms per page change
   useEffect(() => {
@@ -69,7 +80,7 @@ const RoomsList = ({
   return (
     <div className='flex flex-col gap-[30px] mb-[30px]'>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'> 
-        {displayedRooms.map((room: Beds24RoomType) => (
+        {displayedRooms.map((room) => (
           <RoomCard 
             params={params}
             key={room.id} 
