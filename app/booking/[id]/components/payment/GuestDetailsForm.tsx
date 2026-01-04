@@ -4,31 +4,25 @@ import CustomInput from '@/app/_components/ui/customInput'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/app/_components/ui/button'
+import { Checkbox } from '@/app/_components/ui/checkbox'
 import { useBookingStore } from '@/store/useBookingStore'
 import { GuestDetailsFormData, guestDetailsSchema } from '@/types/schemas'
 import { useStore } from '@/store/useStore'
 import { useCreateBooking } from '@/app/hooks/useCreateBooking'
+import Link from 'next/link'
 
-const GuestDetailsForm = () => {
-  const { setValue } = useStore()
-  const { setBooking, booking } = useBookingStore()
+const GuestDetailsForm = () => {  
+  const defaultValues = {name: '', last_name: '', email: '', phone: '', consent: false}
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue: setFormValue } = useForm<GuestDetailsFormData>({ resolver: zodResolver(guestDetailsSchema), defaultValues,})
+  const consent = watch('consent')
+
+  const setValue = useStore(state => state.setValue)
+  const setBooking = useBookingStore(state => state.setBooking)
+  const booking = useBookingStore(state => state.booking)
   const createBooking = useCreateBooking()
+
   const [isHydrated, setIsHydrated] = useState(false)
   
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<GuestDetailsFormData>({
-    resolver: zodResolver(guestDetailsSchema),
-    defaultValues: {
-      name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-    },
-  })
 
   useEffect(() => {
     if (!useBookingStore.persist.hasHydrated()) {
@@ -41,7 +35,7 @@ const GuestDetailsForm = () => {
     if (!isHydrated) return
     
     const bookerData = booking?.booker
-    const guestData = booking?.reservations?.primaryGuest
+    const guestData = booking?.reservations?.[0]?.primaryGuest
     
     const firstName = bookerData?.firstName || guestData?.firstName || ''
     const lastName = bookerData?.lastName || guestData?.lastName || ''
@@ -54,6 +48,7 @@ const GuestDetailsForm = () => {
         last_name: lastName,
         email: email,
         phone: phone,
+        consent: false,
       })
     }
   }, [booking, reset, isHydrated])
@@ -64,37 +59,37 @@ const GuestDetailsForm = () => {
       return
     }
 
-    const updatedBooking = {
-      ...booking,
+    const updatedReservations = booking.reservations.map(reservation => ({
+      ...reservation,
+      primaryGuest: {
+        ...reservation.primaryGuest,
+        firstName: data.name,
+        lastName: data.last_name,
+        email: data.email,
+        phone: data.phone,
+      }
+    }))
+    const bookingModel = {
       booker: {
         firstName: data.name,
         lastName: data.last_name,
         email: data.email,
         phone: data.phone,
       },
-      reservations: {
-        ...booking.reservations,
-        primaryGuest: {
-          ...booking.reservations.primaryGuest,
-          firstName: data.name,
-          lastName: data.last_name,
-          email: data.email,
-          phone: data.phone,
-        }
-      }
+      consent: data.consent, // Include consent flag
+      reservations: updatedReservations
     }
+    setBooking(bookingModel)
 
-    setBooking(updatedBooking)
-
-    // createBooking.mutate(updatedBooking)
-    setValue(3,'bookingPage')
+    //Create booking temporrary
+    createBooking.mutate(bookingModel)
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4 col-span-2'>
+    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col col-span-2'>
       <h2 className='text-[22px] font-bold mb-10'>Guest Details</h2>
       
-      <div className='grid grid-cols-2 gap-4 mb-9 '>
+      <div className='grid grid-cols-2 gap-4 mb-8'>
         <div className='relative flex flex-col gap-1 pb-5'>
           <CustomInput 
             register={register} 
@@ -152,6 +147,38 @@ const GuestDetailsForm = () => {
         </div>
       </div>
 
+      <div className='mb-8'>
+        <div className='flex items-start gap-3'>
+          <Checkbox
+            size='sm'
+            id='consent'
+            checked={consent}
+            onCheckedChange={(checked) => {
+              setFormValue('consent', checked === true, { shouldValidate: true })
+            }}
+            className={errors.consent ? 'border-red' : ''}
+          />
+          <label 
+            htmlFor='consent' 
+            className='text-sm text-dark cursor-pointer leading-relaxed'
+            onClick={() => setFormValue('consent', !consent, { shouldValidate: true })}
+          >
+            I agree to the{' '}
+            <Link 
+              href='/privacy-policy' 
+              target='_blank'
+              className='text-blue underline hover:text-blue/80'
+              onClick={(e) => e.stopPropagation()}
+            >
+              Privacy Policy
+            </Link>
+          </label>
+        </div>
+        {errors.consent && (
+          <span className='text-red text-xs mt-1 block pl-10'>{errors.consent.message}</span>
+        )}
+      </div>
+
       <div className='flex items-center gap-3 justify-start'>
         <Button 
           type='button' 
@@ -163,7 +190,7 @@ const GuestDetailsForm = () => {
         <Button 
           type='submit' 
           className='w-[210px] h-[55px]'
-          disabled={createBooking.isPending}
+          disabled={createBooking.isPending || !consent}
         >
           {createBooking.isPending ? 'Creating Booking...' : 'Continue'}
         </Button>

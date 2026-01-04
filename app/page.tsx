@@ -5,6 +5,12 @@ import VibeSection from './_components/Home/VibeSection';
 import FAQSection from './_components/Home/FAQSection';
 import ReviewsSection from './_components/Home/ReviewsSection';
 import CheckInSection from './_components/Home/CheckInSection';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Boutique Hotel in Berlin Mitte | Central Location',
+  description: 'Book your stay at Charlie M House Berlin. Experience central location near Checkpoint Charlie, modern automated rooms, and the best of Berlin Mitte.',
+};
 
 export default function Home() {
 

@@ -10,6 +10,26 @@ const FAQSection = () => {
   const [activeFAQ, setActiveFAQ] = useState('Check-in & Access')
   return (
     <div className='w-full grid grid-cols-1 lg:grid-cols-2 container px-4 lg:px-[100px] py-[85px] gap-12 '>
+      {/* JSON-LD FAQ Schema for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqPoints.flatMap(category => 
+              category.items.map(item => ({
+                "@type": "Question",
+                "name": item.title,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": item.p.join(' ')
+                }
+              }))
+            )
+          })
+        }}
+      />
       <div className='col-span-1 flex flex-col'>
         <h2 className='text-[40px] lg:text-6xl font-bold jakarta leading-[1.2] mb-8'>Frequently Asked Questions</h2>
         <Image src='/images/city.webp' alt='faq' width={576} height={465} className='w-full  rounded-[40px] object-cover' />

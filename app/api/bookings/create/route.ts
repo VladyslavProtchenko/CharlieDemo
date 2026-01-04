@@ -1,24 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getOrRefreshToken } from '@/services/Request';
-import { Booking } from '@/types/booking';
+import { NextResponse } from "next/server"
+import { headers } from "next/headers"
+import { getOrRefreshToken } from "@/services/Request"
+import { createSupabaseServerClient } from "@/lib/supabase-server"
+import { Booking } from "@/types/booking"
 
-const APALEO_API_URL = 'https://api.apaleo.com';
+const APALEO_API_URL = 'https://api.apaleo.com'
 
-export async function POST(request: NextRequest) {
+interface ApaleoBookingResponse {
+  id: string
+  reservationIds: { id: string }[]
+}
+
+export async function POST(request: Request) {
   try {
-    // Get booking data from request body
-    const booking: Booking = await request.json();
-    
-    // Validate booking data
-    if (!booking.reservations?.primaryGuest?.email) {
-      return NextResponse.json(
-        { error: 'Missing required guest information' },
-        { status: 400 }
-      );
-    }
+    const booking: Booking = await request.json()
 
-    // Get token on server side (secure!)
-    const token = await getOrRefreshToken();
+    // Get Apaleo token
+    const token = await getOrRefreshToken()
 
     // Create booking in Apaleo
     const response = await fetch(`${APALEO_API_URL}/booking/v1/bookings`, {
@@ -29,11 +27,12 @@ export async function POST(request: NextRequest) {
         'Accept': 'application/json',
       },
       body: JSON.stringify(booking),
-    });
+    })
+
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Apaleo API error:', response.status, errorData);
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Apaleo API error:', response.status, errorData)
       
       return NextResponse.json(
         { 
@@ -42,22 +41,60 @@ export async function POST(request: NextRequest) {
           status: response.status
         },
         { status: response.status }
-      );
+      )
     }
 
-    const data = await response.json();
-    
-    return NextResponse.json(data, { status: 201 });
+    const apaleoData: ApaleoBookingResponse = await response.json()
+
+    // Save reservations to Supabase
+    try {
+      const supabase = await createSupabaseServerClient()
+      const primaryGuest = booking.reservations[0]?.primaryGuest
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (primaryGuest && apaleoData.id && apaleoData.reservationIds) {
+        // Create an array of reservations to insert
+        const reservationsToInsert = apaleoData.reservationIds.map(reservation => ({
+          reservation_id: reservation.id,
+          booking_id: apaleoData.id,
+          last_name: primaryGuest.lastName,
+          email: primaryGuest.email,
+        }));
+
+        // Insert all reservations
+        await supabase.from('reservations').insert(reservationsToInsert);
+
+        // Save consent record if consent was given
+        if (booking.consent) {
+          const headersList = await headers()
+          const ip = 
+            headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+            headersList.get('x-real-ip') || 
+            'unknown'
+
+          const consentData = {
+            user_id: user?.id || null,
+            booking_id: apaleoData.id,
+            consent_type: 'booking',
+            consent_given: true,
+            ip_address: ip,
+            privacy_policy_version: '1.0',
+            consent_date: new Date().toISOString(),
+          }
+
+          await supabase.from('consents').insert(consentData)
+        }
+      }
+    } catch (supabaseError) {
+      console.error('Failed to save reservations to Supabase:', supabaseError)
+      // Don't fail the whole request if Supabase fails
+    }
+
+    return NextResponse.json(apaleoData, { status: 201 })
     
   } catch (error) {
-    console.error('Create booking error:', error);
+    console.error('Create booking error:', error)
     
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' },{ status: 500 })
   }
 }
-

@@ -11,15 +11,17 @@ import {
 const PhotoSlider = ({
   height,
   images,
-  category = 'Category A'
 }: {
   height: number
   images: string[]
-  category?: string
 }) => {
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
+
+  // Use placeholder if no images
+  const displayImages = images && images.length > 0 ? images : ['/images/image-placeholder.webp']
+  const hasImages = images && images.length > 0
 
   useEffect(() => {
     if (!api) return
@@ -32,24 +34,34 @@ const PhotoSlider = ({
     })
   }, [api])
 
+  const handlePhotoClick = () => {
+    if (hasImages) {
+      api?.scrollNext()
+    }
+  }
+
   return (
     <div className="relative">
       <Carousel 
         className="w-full relative" 
         setApi={setApi}
         opts={{
-          loop: true,
+          loop: hasImages,
           watchDrag: false,
         }}
       >
  
         <CarouselContent>
-          {images.map((image, index) => (
+          {displayImages.map((image, index) => (
             <CarouselItem key={index}>
-              <div className="relative w-full overflow-hidden " style={{ height: `${height}px` }}>
+              <div 
+                className={`relative w-full overflow-hidden ${hasImages ? 'cursor-pointer' : ''}`}
+                style={{ height: `${height}px` }}
+                onClick={handlePhotoClick}
+              >
                 <Image 
                   src={image} 
-                  alt={`Photo ${index + 1}`} 
+                  alt={hasImages ? `Photo ${index + 1}` : 'No image available'} 
                   fill
                   className="object-cover"
                 />
@@ -59,8 +71,9 @@ const PhotoSlider = ({
         </CarouselContent>
       </Carousel>
 
-      {/* Pagination Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center gap-[6px]">
+      {/* Pagination Dots - only show if there are actual images */}
+      {hasImages && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center gap-[6px]">
         {(() => {
           const maxDots = 5
           
@@ -77,19 +90,18 @@ const PhotoSlider = ({
             ))
           }
 
-          // Вычисляем окно из 3 точек с центрированием активной точки
-          let startIndex
-          if (current === 0) {
+          let startIndex = 0
+          
+          if (current <= 1) {
             startIndex = 0
-          } else if (current >= count - 1) {
+          } else if (current >= count - 2) {
             startIndex = count - maxDots
           } else {
-            startIndex = current - 1
+            startIndex = current - 2
           }
 
-          return Array.from({ length: Math.min(maxDots, count) }).map((_, i) => {
+          return Array.from({ length: maxDots }).map((_, i) => {
             const slideIndex = startIndex + i
-            if (slideIndex >= count) return null
             
             return (
               <button
@@ -103,7 +115,8 @@ const PhotoSlider = ({
             )
           })
         })()}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

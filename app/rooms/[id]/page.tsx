@@ -18,10 +18,9 @@ interface IParams {
 
 const RoomPage = async ({ params, searchParams }: IParams) => {
   const { id } = await params
-  const { from, to, adults, children = '1' } = await searchParams
+  const { from, to, adults, children } = await searchParams
   
-  const guests = Number(adults || 0) + Number(children || 0)
-  const rooms = await getSingleRoom(id, from, to, guests)
+  const rooms = await getSingleRoom(id, from, to)
   if ('error' in rooms) return <ErrorCard isSingleRoom={true} link='/rooms' />
   const nights = calculateNights(from as string, to as string);
   const type = nights > 7  ? 'LONG_STAY' : 'BAR_WEB';
@@ -30,7 +29,7 @@ const RoomPage = async ({ params, searchParams }: IParams) => {
 
   return (
     <div className='flex flex-col relative container px-4 md:px-10 xl:px-[100px] pt-10 flex-1'>
-      <PhotoGallery />
+      <PhotoGallery images={room.images} />
       <div className='grid grid-cols-1  lg:grid-cols-3 xl:grid-cols-4 gap-y-10 md:gap-10 mb-[30px]'>
 
         <div className='col-span-2 xl:col-span-3 flex flex-col'>

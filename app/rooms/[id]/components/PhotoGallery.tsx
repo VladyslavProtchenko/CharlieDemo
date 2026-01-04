@@ -5,23 +5,11 @@ import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/_components/ui/dialog";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
-const PhotoGallery = () => {
+const PhotoGallery = ({ images }: { images: string[] }) => {
   const [showImages, setShowImages] = useState<null | number>(null);
 
-  const images = [
-    '/images/room1.webp',
-    '/images/room2.webp',
-    '/images/room3.webp',
-    '/images/room2.webp',
-    '/images/room3.webp',
-    '/images/room2.webp',
-      '/images/room3.webp',
-    '/images/room2.webp',
-    '/images/room3.webp',
-    '/images/room2.webp',
-    '/images/room3.webp',
-    '/images/room2.webp',
-  ]
+  // Check if there are no images
+  const hasImages = images && images.length > 0
 
   const nextPhoto = () => {
     if (showImages === images.length - 1 || showImages === null) return
@@ -32,6 +20,24 @@ const PhotoGallery = () => {
     if (showImages === 0 || showImages === null) return
     setShowImages(showImages - 1)
   }
+
+  // Show placeholder if no images
+  if (!hasImages) {
+    return (
+      <div className='mb-[30px]'>
+        <div className='relative rounded-4xl overflow-hidden'>
+          <Image 
+            src='/images/image-placeholder.webp'
+            alt='No images available' 
+            width={1200} 
+            height={300} 
+            className='w-full h-[300px] object-cover' 
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className='grid lg:grid-cols-2 gap-4  mb-[30px]'>
       
@@ -67,14 +73,14 @@ const PhotoGallery = () => {
               alt='room' 
               width={720} 
               height={440} 
-              className='max-h-[calc(80vh-140px)] w-full object-contain rounded-4xl cursor-pointer' 
+              className='max-h-[calc(80vh-140px)] w-full object-cover rounded-4xl cursor-pointer' 
               onClick={() => setShowImages(showImages === null ? 0 : showImages + 1)}
             />
-            <div onClick={prevPhoto} className='absolute left-0 bg-light1/50 hover:bg-gray-200/50 top-0 bottom-0 w-10 md:w-20 flex items-center justify-center  rounded-l-4xl'>
-              <IoChevronBack className='size-10 md:size-20 cursor-pointer text-black'  />
+            <div onClick={prevPhoto} className='absolute left-0 bg-gradient-to-l from-transparent via-black/50 to-black/80 hover:to-black/90 top-0 bottom-0 w-10 md:w-20 flex items-center justify-center  rounded-l-4xl'>
+              <IoChevronBack className='size-10 md:size-20 cursor-pointer text-white'  />
             </div>
-            <div onClick={nextPhoto} className='absolute right-0 bg-light1/50 hover:bg-gray-200/50 top-0 bottom-0 w-10 md:w-20 flex items-center justify-center  rounded-r-4xl'>
-              <IoChevronForward className='size-10 md:size-20 cursor-pointer text-black'  />
+            <div onClick={nextPhoto} className='absolute right-0 bg-gradient-to-r from-transparent via-black/50 to-black/80 hover:to-black/90 top-0 bottom-0 w-10 md:w-20 flex items-center justify-center  rounded-r-4xl'>
+              <IoChevronForward className='size-10 md:size-20 cursor-pointer text-white'  />
             </div>
           </div>
 

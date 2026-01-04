@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { UrlParams } from "@/types/apaleo"
 import { Room, RoomExtra } from "@/types/types"
 import { RoomOffer } from "@/types/offers"
-import { Booking } from "@/types/booking";
 
 export function cn(...inputs: ClassValue[]) {return twMerge(clsx(inputs))}
 export const getDate = (date: Date) => {return date?dayjs(date).format('YYYY-MM-DD'): undefined}
@@ -59,30 +58,44 @@ export const getPriceData = ({ params, room }: {params: UrlParams, room: RoomOff
 
 
 export function sortGuestsByRooms(
-    maxAdults: number,
-    maxChildren: number,
-    adults: number,
-    children: number,
-    dateRange: {from: string, to: string}
-  ) {
-  const rooms: { id: string; adults: number; children: number, from: string, to: string}[] = [];
+  adults: number,
+  children: number,
+  from: string,
+  to: string,
+  maxPersons: number
+): Room[] {
+  const rooms: Room[] = [];
   let remainingAdults = adults;
   let remainingChildren = children;
 
+  const pushRoom = (a: number, c: number) =>
+    rooms.push({ id: uuidv4(), adults: a, children: c, from, to });
+
+  // Распределяем гостей, пока есть кто размещать
   while (remainingAdults > 0 || remainingChildren > 0) {
-    const roomAdults = Math.min(maxAdults, remainingAdults);
-    const roomChildren = maxChildren > 0 ? Math.min(maxChildren, remainingChildren) : 0;
+    let roomAdults = 0;
+    let roomChildren = 0;
 
-    rooms.push({
-      id: uuidv4(),
-      adults: roomAdults,
-      children: roomChildren,
-      from: dateRange.from,
-      to: dateRange.to,
-    });
+    // Сначала заполняем взрослыми
+    if (remainingAdults > 0) {
+      roomAdults = Math.min(remainingAdults, maxPersons);
+      remainingAdults -= roomAdults;
+    }
 
-    remainingAdults -= roomAdults;
-    remainingChildren -= roomChildren;
+    // Добавляем детей, если есть место
+    const availableSpace = maxPersons - roomAdults;
+    if (availableSpace > 0 && remainingChildren > 0) {
+      roomChildren = Math.min(remainingChildren, availableSpace);
+      remainingChildren -= roomChildren;
+    }
+
+    // Если в комнате нет гостей (не должно быть), добавляем детей
+    if (roomAdults === 0 && roomChildren === 0 && remainingChildren > 0) {
+      roomChildren = Math.min(remainingChildren, maxPersons);
+      remainingChildren -= roomChildren;
+    }
+
+    pushRoom(roomAdults, roomChildren);
   }
 
   return rooms;
@@ -91,24 +104,58 @@ export function sortGuestsByRooms(
 export const getExtraPrice = (
   extra:  RoomExtra, 
   guests: number,
-  nights: number
+  nights: number,
+  from: string,
+  to: string
 ) => {
   const pricingUnit = extra.pricingUnit;
   const price = extra.price;
   const pricingType = extra.pricingType;
+  const daysOfWeek = extra.daysOfWeek || [];
 
   const units: Record<string, number> = {
     "Person": guests,
     "Room": 1,
   }
 
-  const types = {
-    "Daily": nights,
-    "Departure": 1,
-    "Arrival": 1,
+  // If no days specified, service is available all days
+  if (daysOfWeek.length === 0) {
+    const types = {
+      "Daily": nights,
+      "Departure": 1,
+      "Arrival": 1,
+    }
+    return units[pricingUnit] * types[pricingType] * price;
   }
 
-  return units[pricingUnit] * types[pricingType] * price;
+  // Calculate applicable days based on pricing type
+  let applicableDays = 0;
+
+  if (pricingType === "Daily") {
+    // Count nights where the day of week is in daysOfWeek
+    const fromDate = new Date(from);
+    for (let i = 0; i < nights; i++) {
+      const currentDate = new Date(fromDate);
+      currentDate.setDate(fromDate.getDate() + i);
+      const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+      
+      if (daysOfWeek.includes(dayName)) {
+        applicableDays++;
+      }
+    }
+  } else if (pricingType === "Arrival") {
+    // Check if arrival day is in daysOfWeek
+    const arrivalDate = new Date(from);
+    const arrivalDay = arrivalDate.toLocaleDateString('en-US', { weekday: 'long' });
+    applicableDays = daysOfWeek.includes(arrivalDay) ? 1 : 0;
+  } else if (pricingType === "Departure") {
+    // Check if departure day is in daysOfWeek
+    const departureDate = new Date(to);
+    const departureDay = departureDate.toLocaleDateString('en-US', { weekday: 'long' });
+    applicableDays = daysOfWeek.includes(departureDay) ? 1 : 0;
+  }
+
+  return units[pricingUnit] * applicableDays * price;
 }
 
 export const extraTooltip = (extra: RoomExtra) => {
@@ -150,7 +197,7 @@ export const getPriceType = (arrival: string , departure: string, isNonRef?: boo
 
 export const getType = (nights: number, isRefundable: boolean) => {
   if(nights > 7) {
-    return 'LONG_STAY'
+    return 'LONG_STAY_WEB'
   }
   if(!isRefundable) {
     return 'NON_REF_WEB'
@@ -162,76 +209,31 @@ export const getType = (nights: number, isRefundable: boolean) => {
 }
 
 
-export const buildBookingModel = (
-  updatedRooms: Room[], 
-  flatExtras: RoomExtra[], 
-  roomDetails: RoomOffer, 
+export const formatReservations = (
   from: string, 
   to: string, 
-  totalPrice: number,
-  existingBooking?: Booking // Add existing booking parameter
-): Partial<Booking> => {
-  // Calculate total adults and collect children ages from all rooms
-  const totalAdults = updatedRooms.reduce((sum, room) => sum + room.adults, 0)
-  const childrenAges: number[] = []
-  
-  updatedRooms.forEach(room => {
-    // Assuming children are represented by room.children count
-    // If you have actual ages, replace this with actual ages array
-    for (let i = 0; i < room.children; i++) {
-      childrenAges.push(0) // Default age, replace with actual if available
-    }
-  })
-
-  // Collect all services from all rooms
-  const services = flatExtras.map(extra => ({
-    serviceId: extra.id
-  }))
-
-  // Build timeSlices from roomDetails
+  roomDetails: RoomOffer, 
+  updatedRooms: Room[], 
+) => {
   const timeSlices = roomDetails.timeSlices.map(slice => ({
     ratePlanId: roomDetails.ratePlan.id
   }))
 
-  return {
-    // Keep existing booker data if available, otherwise initialize with empty fields
-    booker: existingBooking?.booker || {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-    },
-    
-    reservations: {
-      arrival: from as string,
-      departure: to as string,
-      adults: totalAdults,
-      childrenAges: childrenAges.length > 0 ? childrenAges : undefined,
-      channelCode: "Direct",
-      
-      // Keep existing primaryGuest data if available
-      primaryGuest: existingBooking?.reservations?.primaryGuest || {
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: {
-          addressLine1: '',
-          postalCode: '',
-          city: '',
-          countryCode: '',
-        }
-      },
-      
-      guaranteeType: "Prepayment",
+  const reservations = updatedRooms.map(item =>{
+    const childrenAges = item.children > 0 ? Array(item.children).fill(0) as number[] : undefined
+    return {
+      arrival: from,
+      departure: to,
+      adults: item.adults,
+      channelCode: 'Direct' as const,
+      guaranteeType: 'Prepayment' as const,
       timeSlices,
-      services,
-      
-      prePaymentAmount: {
-        amount: totalPrice,
-        currency: roomDetails.currency || 'EUR'
-      },
-      transactionReference: '' // Will be filled after payment
+      services: item.extras?.map(extra => ({
+        serviceId: extra.id
+      })) || [],
+      ...(childrenAges && { childrenAges }),
     }
-  }
+  })
+
+  return reservations;
 }

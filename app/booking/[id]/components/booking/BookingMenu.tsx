@@ -4,14 +4,13 @@ import { Button } from "@/app/_components/ui/button";
 import Price from "@/app/_components/ui/price";
 import { BiSolidLike } from "react-icons/bi";
 import { UrlParams } from "@/types/apaleo";
-import { buildBookingModel, calculateNights, extraTooltip, getExtraPrice, getType } from '@/lib/utils';
+import { formatReservations, calculateNights, extraTooltip, getExtraPrice } from '@/lib/utils';
 import AddRooms from './AddRooms';
 import { TAX_RATE } from '@/lib/Constants';
 import { useStore } from '@/store/useStore';
 import { Room } from '@/types/types';
 import { RoomOffer } from '@/types/offers';
 import CustomTooltip from '@/app/_components/ui/CustomTooltip';
-import { Booking } from '@/types/booking';
 
 const BookingMenu = ({
   rooms: roomsOffers,
@@ -25,17 +24,16 @@ const BookingMenu = ({
   const { from, to } = params
   const nights = calculateNights(from as string, to as string)
   const setValue = useStore( state => state.setValue)
-  const { setBooking, booking } = useBookingStore()
+  const { setBooking } = useBookingStore()
   const rooms = useBookingStore(state => state.rooms) || roomsOffers
   const roomDetails = useBookingStore(state => state.roomDetails) || roomsOffers[0]
   const price = roomDetails.price || 0
-
 
   const updatedRooms = rooms.map(room => {
     const updateExtras = room.extras?.map(extra => {
       return {
         ...extra,
-        totalPrice: getExtraPrice(extra, room.adults + room.children, nights),
+        totalPrice: getExtraPrice(extra, room.adults + room.children, nights, from as string, to as string),
       }
     })
     return {
@@ -45,31 +43,27 @@ const BookingMenu = ({
   })
 
 
-
   const flatExtras = updatedRooms.flatMap(room => room.extras || [])
   const getText = (days: number) => days === 1 ? 'night' : 'nights'
 
   //calculate total price for rooms and extras
   const roomsTotalPrice = rooms.reduce((acc, _) => acc + price, 0)
   const extrasTotalPrice = flatExtras.reduce((acc, extra) => acc + extra.totalPrice, 0)
+  
   const tax = TAX_RATE
   const totalPrice = roomsTotalPrice + extrasTotalPrice + tax
-
  
 
   const goNext = () => {
     // Pass existing booking to preserve booker data
-    const bookingModel = buildBookingModel(
-      updatedRooms, 
-      flatExtras, 
-      roomDetails, 
+    const reservations = formatReservations(
       from as string, 
       to as string, 
-      totalPrice,
-      booking // Pass existing booking to preserve booker
+      roomDetails, 
+      updatedRooms, 
     )
-    setBooking(bookingModel as Booking)
-    
+    setBooking({ reservations })
+
     setValue(2,'bookingPage')
   }
 

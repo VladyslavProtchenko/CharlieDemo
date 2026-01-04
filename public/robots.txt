@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and auth callback routes
+Disallow: /admin/
+Disallow: /auth/callback/
+
+Sitemap: https://charliemhouse.com/sitemap.xml
+

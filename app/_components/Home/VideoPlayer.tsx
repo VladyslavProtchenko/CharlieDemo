@@ -124,6 +124,7 @@ export default function VideoPlayer({ videoSrc, posterSrc, className = '', showT
           ref={iframeRef}
           className="w-full h-full object-cover"
           src={getEmbedUrl()}
+          title="Charlie M House Berlin - Hotel Introduction Video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -134,7 +135,7 @@ export default function VideoPlayer({ videoSrc, posterSrc, className = '', showT
       {!isPlaying && showTitle && <>
       <div className='flex flex-col items-center justify-center absolute top-[30px] w-full px-6 gap-3'>
         <h1 className='text-4xl md:text-5xl lg:text-6xl text-white font-[700] text-center jakarta'>Charlie M - Your Berlin story starts here</h1>
-        <h1 className='text-xl md:text-2xl lg:text-4xl text-white font-[700]  jakarta hidden md:flex items-center gap-4 justify-center'>Fully automated stay <Dot size={14} color="gold" /> Central of Berlin </h1>
+        <p className='text-xl md:text-2xl lg:text-4xl text-white font-[700]  jakarta hidden md:flex items-center gap-4 justify-center'>Fully automated stay <Dot size={14} color="gold" /> Central Berlin </p>
       </div>
       </>}
 

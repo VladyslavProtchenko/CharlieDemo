@@ -24,7 +24,7 @@ const WhySection = () => {
         <div className='flex relative xl:col-span-2 '>
           <Image 
             src='/images/why-image.webp' 
-            alt='why1' 
+            alt='Modern smart hotel room interior at Charlie M House Berlin' 
             width={450} 
             height={320} 
             className='rounded-[20px] object-cover w-full h-[320px] z-10 border-b-3 border-r-10 border-blue'
@@ -67,7 +67,7 @@ const cards = [
   {
     title: "Room access via smart code ",
     text: "simple, secure, and always at hand.",
-    icon: <Image src='/images/lock-icon.svg' className='object-cover size-6' width={24} alt='lock-image' height={24}/>
+    icon: <Image src='/images/lock-icon.svg' className='object-cover size-6' width={24} alt='Smart lock system icon' height={24}/>
   },
   {
     title: "Privacy & independence",

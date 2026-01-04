@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 
-import { calculateNights, getDate, getPath, getPriceData } from "@/lib/utils";
+import { getDate, getPath, getPriceData } from "@/lib/utils";
 import { BsFillPersonFill } from "react-icons/bs"
 import { useStore } from "@/store/useStore"
 import { RoomOffer } from "@/types/offers"
@@ -24,7 +24,6 @@ const BookingForm = ({ id, room, params }: { id: string, room: RoomOffer , param
 
   const [guests, setGuests] = useState({adults: parseInt(params?.adults || guestsStore?.adults.toString() || '1'), children: parseInt(params?.children || guestsStore?.children.toString() || '0')});
   const { priceText, nightsText } = getPriceData({ params, room })
-
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: dateRangeStore.from || (params.from ? dayjs(params.from).toDate() : undefined),
     to: dateRangeStore.to || (params.to ? dayjs(params.to).toDate() : undefined),
@@ -50,13 +49,6 @@ const BookingForm = ({ id, room, params }: { id: string, room: RoomOffer , param
     
     if (!fromDate || !toDate) return;
     
-    const nights = calculateNights(fromDate, toDate);
-    
-    
-    const totalGuestsCount = guests.adults + guests.children;
-    const roomsNeeded = Math.ceil(totalGuestsCount / room.maxPersons);
-    const totalPrice = room.price * nights * roomsNeeded;
-    
     const { priceText: newPriceText, nightsText: newNightsText } = getPriceData({ 
       params: {
         from: fromDate,
@@ -72,7 +64,6 @@ const BookingForm = ({ id, room, params }: { id: string, room: RoomOffer , param
     setCurrentNightsText(newNightsText);
   }, [dateRange?.from, dateRange?.to, guests, room]);
 
-  console.log(dateRange, 'dateRange')
 
   const handleBookNow = () => {
     if (!dateRange?.from || !dateRange?.to) return;
