@@ -1,29 +1,30 @@
 'use client';
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/navigation";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const Navigation = () => {
   const pathname = usePathname();
-
+  const t = useTranslations();
+  
   const navigation = [
     {
-      label: 'Rooms',
+      label: t('header.rooms_link'),
       href: '/rooms',
     },
     {
-      label: 'Location',
+      label: t('header.location_link'),
       href: "/location",
     },
     {
-      label: 'Concept',
+      label: t('header.about_us_link'),
       href: "/concept",
     },
     {
       label: 'FAQ',
       href: "/faq",
     }
-  ]
+  ];
 
   return (
     <nav className="hidden md:flex items-center 2xl:w-1/4 justify-between">

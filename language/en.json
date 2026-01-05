@@ -1,13 +1,37 @@
 {
-  "header": {
-    "rooms": "Rooms",
-    "why-charlie": "Why Charlie M",
-    "location": "Location"
+  
+  "book_now_btn": "Book Now",
+  "check_in_btn": "Check In",
+
+  "sign_in_btn": "Sign In",
+  "sign_out_btn": "Sign Out",
+  "sign_up_btn": "Sign Up",
+  "view_all_btn": "View All",
+
+  "home":{
+    "rooms_title": "Choose Your Room",
+    "rooms_subtitle": "Your perfect room, just a click away.",
+    "concept_title": "A New Way to Stay",
+    "concept_subtitle": "Staying with us is designed to be easy, comfortable, and completely in your control.",
+    "concept_subtitle_2": "With our fully digital process, you move at your own pace — from arrival to checkout.",
+    "point_1": "Online check-in",
+    "point_1_text": "no reception, no waiting.",
+    "point_2": "Room access via smart code",
+    "point_2_text": "simple, secure, and always at hand.",
+    "point_3": "Privacy & independence",
+    "point_3_text": "a calm stay without unnecessary interruptions.",
+    "point_4": "Instant support",
+    "point_4_text": "quick help via chat whenever you need it."
   },
-  "privacyPolicy": {
-    "title": "Privacy Policy",
-    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    "lastUpdated": "Last updated 24 Oct 2024"
+
+  "header": {
+    "rooms_link": "Rooms",
+    "location_link": "Location",
+    "about_us_link": "About Us",
+    "open_profile_link": "Open profile",
+    "dear_guest": "Dear guest",
+    "my_account_link": "My Account"
+
   }
 }
 
